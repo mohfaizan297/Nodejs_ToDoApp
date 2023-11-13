@@ -1,4 +1,4 @@
-const app = require("./index");
+const app = require("./app");
 const dbConnect = require("./dbConnect");
 
 dbConnect();
