@@ -1,16 +1,16 @@
 const mongoose = require("mongoose");
 
 module.exports = async () => {
-  const mongoUri = "mongodb://localhost:27017";
+  const mongoUri = process.env.MONGO_URI;
 
   await mongoose
     .connect(mongoUri, {
       dbName: "to_do",
     })
-    .then(() => {
-      console.log("MongoDB Connected");
+    .then((c) => {
+      console.log(`MongoDB Connected ${c.connection.host}`);
     })
-    .catch((error) => {
-      console.log(error);
+    .catch((e) => {
+      console.log(e);
     });
 };
