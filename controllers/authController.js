@@ -1,75 +1,65 @@
 const bcrypt = require("bcrypt");
-const { error, success } = require("../Utils/responseWrapper");
 const User = require("../models/User");
-const jwt = require("jsonwebtoken");
+const sendCookie = require("../Utils/feature");
 
 const signupController = async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password)
-      return res.send(error(403, "All fields are required"));
+      return res.status(403).json({
+        success: false,
+        message: "All fields are required",
+      });
     const oldUser = await User.findOne({ email });
-    if (oldUser) return res.send(error(401, "User is already registered"));
+    if (oldUser)
+      return res.status(404).json({
+        success: false,
+        message: "user already exist",
+      });
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
     });
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
-    return res
-      .status(201)
-      .cookie("token", token, {
-        httpOnly: true,
-        maxAge: 15 * 60 * 1000, //15mins
-        sameSite: process.env.NODE_ENV === "Development" ? "lax" : "none",
-        secure: process.env.NODE_ENV === "Development" ? false : true,
-      })
-      .json({
-        status: "ok",
-        statusCode: 201,
-        message: "registered successfully",
-      });
+    sendCookie(user, res, "Registered Successfully", 201);
   } catch (e) {
-    return res.send(error(500, e.message));
+    return res.status(500).json({ success: false, message: e.message });
   }
 };
 const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password)
-      return res.send(error(403, "All fields are required"));
+      return res.status(403).json({
+        success: false,
+        message: "All fields are required",
+      });
     const user = await User.findOne({ email }).select("+password");
-    if (!user) return res.send(error(401, "User is not registered"));
+    if (!user)
+      return res.status(404).json({
+        success: false,
+        message: "user doesn't exist",
+      });
     const matchedPassword = await bcrypt.compare(password, user.password);
     if (!matchedPassword)
-      return res.send(error(403, "email or password is incorrect"));
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
-    return res
-      .status(200)
-      .cookie("token", token, {
-        httpOnly: true,
-        maxAge: 15 * 60 * 1000, //15mins
-        sameSite: process.env.NODE_ENV === "Development" ? "lax" : "none",
-        secure: process.env.NODE_ENV === "Development" ? false : true,
-      })
-      .json({
-        status: "ok",
-        statusCode: 201,
-        message: `welcome back ${user.name}`,
+      return res.status(404).json({
+        success: false,
+        message: "Email or Password is incorrect",
       });
+    sendCookie(user, res, `Welcome back, ${user.name}`, 200);
   } catch (e) {
-    return res.send(error(500, e.message));
+    return res.status(500).json({ success: false, message: e.message });
   }
 };
 const getMyProfile = async (req, res) => {
   try {
     return res.status(200).json({
-      status: "ok",
+      success: true,
       user: req.user,
     });
   } catch (e) {
-    return res.send(error(500, e.message));
+    return res.status(500).json({ success: false, message: e.message });
   }
 };
 const logoutController = async (req, res) => {
@@ -82,11 +72,11 @@ const logoutController = async (req, res) => {
         secure: process.env.NODE_ENV === "Development" ? false : true,
       })
       .json({
-        status: "ok",
+        success: true,
         message: "Logout Successfully",
       });
   } catch (e) {
-    return res.send(error(500, e.message));
+    return res.status(500).json({ success: false, message: e.message });
   }
 };
 

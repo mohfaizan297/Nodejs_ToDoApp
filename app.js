@@ -19,14 +19,8 @@ app.use(
   })
 );
 
-// dbConnect();
-
 //Using Routers
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/task", taskRouter);
-
-// app.listen(process.env.PORT, () => {
-//   console.log(`server is listening on ${process.env.PORT}`);
-// });
 
 module.exports = app;
